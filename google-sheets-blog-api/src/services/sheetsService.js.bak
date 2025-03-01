@@ -1,0 +1,65 @@
+// import { google } from '@googleapis/sheets';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+// Fix the import statement to use CommonJS style
+import pkg from '@googleapis/sheets';
+const { google } = pkg;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const CREDENTIALS_PATH = path.join(__dirname, '../../google-credentials.json');
+
+// Google Sheets API'ye bağlanmak için kimlik bilgilerini yükle
+const loadCredentials = () => {
+  try {
+    const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
+    return credentials;
+  } catch (error) {
+    console.error('Kimlik bilgileri yüklenirken hata oluştu:', error);
+    throw new Error('Google Sheets kimlik bilgileri yüklenemedi');
+  }
+};
+
+// Google Sheets API istemcisini oluştur
+const createSheetsClient = () => {
+  const credentials = loadCredentials();
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  });
+
+  return google.sheets({ version: 'v4', auth });
+};
+
+// Blog verilerini Google Sheets'ten çek
+export const fetchBlogsFromSheet = async () => {
+  try {
+    const sheets = createSheetsClient();
+    const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
+    const sheetName = process.env.GOOGLE_SHEET_NAME;
+    const range = `${sheetName}!A2:E`; // A2'den başlayarak E sütununa kadar (başlık satırını atlıyoruz)
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+    });
+
+    const rows = response.data.values || [];
+    
+    // Verileri istenen formata dönüştür
+    return rows.map((row) => {
+      return {
+        id: row[0] || '',
+        title: row[1] || '',
+        content: row[2] || '',
+        imageUrl: row[3] || null, // Opsiyonel alan
+        publishDate: row[4] || '',
+      };
+    });
+  } catch (error) {
+    console.error('Blog verileri çekilirken hata oluştu:', error);
+    throw error;
+  }
+}; 
