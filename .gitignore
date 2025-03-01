@@ -1,4 +1,8 @@
-node_modules
+node_modules/
 # Environment dosyaları
 .env
+.DS_Store
+build/
 google-credentials.json
+client/build/
+client/node_modules/
