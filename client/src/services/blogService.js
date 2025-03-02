@@ -1,10 +1,13 @@
 import axios from 'axios';
 import slugify from 'slugify';
 
-// API URL - Production vs Development
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://api.tashukuk.com/api/blogs'  // Production URL
-  : 'http://localhost:5002/api/blogs';    // Development URL
+// Google Sheets API configuration
+const SHEET_ID = process.env.REACT_APP_GOOGLE_SHEETS_ID || "1hsNY6LN82zEK8eQBY0x55Cq8538dYz8cUy4Y4jObr3U";
+const SHEET_NAME = process.env.REACT_APP_GOOGLE_SHEET_NAME || "BlogPosts";
+const API_KEY = process.env.REACT_APP_GOOGLE_SHEETS_API_KEY;
+
+// Google Sheets API URL
+const SHEETS_API_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
 
 // Mock data for fallback when API is not available (e.g., GitHub Pages)
 const MOCK_BLOGS = [
@@ -48,8 +51,25 @@ const MOCK_BLOGS = [
 // Tüm blog yazılarını getir
 export const getAllBlogs = async () => {
   try {
-    const response = await axios.get(API_URL);
-    return response.data.data;
+    const response = await fetch(SHEETS_API_URL);
+    
+    if (!response.ok) {
+      throw new Error("Google Sheets API çağrısı başarısız.");
+    }
+    
+    const data = await response.json();
+    const rows = data.values;
+    
+    // İlk satır başlık satırı olduğu için onu atlayıp diğer satırları işliyoruz
+    const blogs = rows.slice(1).map((row, index) => ({
+      id: (index + 1).toString(),
+      title: row[0] || 'Başlık Yok',
+      content: row[1] || 'İçerik Yok',
+      publishDate: row[2] || 'Tarih Yok',
+      imageUrl: row[3] || null
+    }));
+    
+    return blogs;
   } catch (error) {
     console.error('Blog verileri alınırken hata oluştu:', error);
     console.log('Mock veri kullanılıyor...');
@@ -60,8 +80,15 @@ export const getAllBlogs = async () => {
 // ID'ye göre blog yazısı getir
 export const getBlogById = async (id) => {
   try {
-    const response = await axios.get(`${API_URL}/${id}`);
-    return response.data.data;
+    // Tüm blogları getir ve ID'ye göre filtrele
+    const allBlogs = await getAllBlogs();
+    const blog = allBlogs.find(blog => blog.id === id);
+    
+    if (blog) {
+      return [blog];
+    } else {
+      throw new Error("Blog bulunamadı");
+    }
   } catch (error) {
     console.error('Blog verisi alınırken hata oluştu:', error);
     // Mock veriden ID'ye göre blog yazısını bul
