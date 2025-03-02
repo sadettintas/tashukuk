@@ -1,60 +1,86 @@
 import axios from 'axios';
 import slugify from 'slugify';
 
-// Local API URL - Production vs Development
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://api.tashukuk.com/api/blogs'  // Production URL
-  : 'http://localhost:5002/api/blogs';    // Development URL - Local Google Sheets API server
+// Google Sheets API configuration
+const SHEET_ID = process.env.REACT_APP_GOOGLE_SHEETS_ID || "1hsNY6LN82zEK8eQBY0x55Cq8538dYz8cUy4Y4jObr3U";
+const SHEET_NAME = process.env.REACT_APP_GOOGLE_SHEET_NAME || "BlogPosts";
+const API_KEY = process.env.REACT_APP_GOOGLE_SHEETS_API_KEY || "AIzaSyDJvk4A_K5SVv78Rl4AumnadNGGS7hG4HI";
 
-// Mock data for fallback when API is not available (e.g., GitHub Pages)
+// Google Sheets API URL
+const SHEETS_API_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
+
+// Check if we're in development mode
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// Mock data for development and fallback
 const MOCK_BLOGS = [
   {
-    id: '1',
-    title: 'Türk Hukukunda Yeni Düzenlemeler',
-    content: 'Türk hukuk sisteminde son dönemde yapılan değişiklikler ve yeni düzenlemeler hakkında detaylı bir inceleme. Bu yazımızda, özellikle iş hukuku ve ticaret hukuku alanlarında getirilen yenilikleri ele alıyoruz. Yeni düzenlemelerin vatandaşlara ve iş dünyasına etkileri neler olacak? Hangi haklar genişletildi, hangi yükümlülükler değişti? Tüm bu soruların cevaplarını bu yazımızda bulabilirsiniz.',
-    publishDate: '15 Şubat 2023',
-    imageUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80'
+    id: "1",
+    title: "Türkiye'de İş Hukuku: Temel Haklar ve Sorumluluklar",
+    content: "İş hukuku, işçi ve işveren arasındaki ilişkileri düzenleyen hukuk dalıdır. Türkiye'de iş hukuku, 4857 sayılı İş Kanunu başta olmak üzere çeşitli kanun ve yönetmeliklerle düzenlenmektedir. İşçilerin temel hakları arasında adil ücret, güvenli çalışma koşulları, izin hakları ve sosyal güvenlik bulunmaktadır. İşverenler ise iş sağlığı ve güvenliği önlemlerini almak, zamanında ücret ödemek ve ayrımcılık yapmamakla yükümlüdür. İş sözleşmelerinin hazırlanması, fesih süreçleri ve tazminat hesaplamaları gibi konularda hukuki danışmanlık almak, hem işçiler hem de işverenler için büyük önem taşımaktadır.",
+    publishDate: "2023-05-15",
+    imageUrl: "/images/placeholder/blog1.jpg"
   },
   {
-    id: '2',
-    title: 'İş Hukukunda İşçi Hakları',
-    content: 'İş hukukunda işçilerin sahip olduğu temel haklar ve bu hakların korunması için izlenmesi gereken yollar. İşçi-işveren ilişkilerinde sıkça karşılaşılan sorunlar ve çözüm önerileri. İş sözleşmesinin feshi, kıdem tazminatı, ihbar tazminatı gibi konularda bilmeniz gerekenler. İşyerinde karşılaşabileceğiniz haksız uygulamalara karşı yasal haklarınızı öğrenin ve hukuki süreçleri nasıl başlatabileceğinizi keşfedin.',
-    publishDate: '3 Mart 2023',
-    imageUrl: 'https://images.unsplash.com/photo-1521791055366-0d553872125f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80'
+    id: "2",
+    title: "Gayrimenkul Hukuku: Alım-Satım Süreçleri ve Dikkat Edilmesi Gerekenler",
+    content: "Gayrimenkul alım-satım işlemleri, hukuki açıdan dikkat gerektiren süreçlerdir. Tapu devri, imar durumu, takyidat sorgulaması ve vergi yükümlülükleri gibi konular, işlemin güvenli bir şekilde tamamlanması için önemlidir. Özellikle kat irtifakı ve kat mülkiyeti arasındaki farklar, yapı kullanma izin belgesi ve iskan durumu, alıcıların dikkat etmesi gereken hususlardır. Ayrıca, gayrimenkul üzerindeki ipotekler, hacizler ve şerhler de alım-satım kararını etkileyebilecek faktörlerdir. Profesyonel hukuki danışmanlık almak, bu süreçte karşılaşılabilecek riskleri minimize etmek için en doğru adımdır.",
+    publishDate: "2023-06-22",
+    imageUrl: "/images/placeholder/blog2.jpg"
   },
   {
-    id: '3',
-    title: 'Aile Hukuku ve Boşanma Süreçleri',
-    content: 'Aile hukuku kapsamında boşanma süreçleri, nafaka, velayet ve mal paylaşımı konularında bilmeniz gerekenler. Anlaşmalı ve çekişmeli boşanma arasındaki farklar nelerdir? Boşanma davası açmadan önce hangi belgeleri hazırlamalısınız? Çocukların velayeti nasıl belirlenir? Nafaka miktarı neye göre hesaplanır? Bu yazımızda, boşanma sürecinde karşılaşabileceğiniz tüm hukuki konuları detaylı bir şekilde ele alıyoruz.',
-    publishDate: '17 Nisan 2023',
-    imageUrl: 'https://images.unsplash.com/photo-1593115057322-e94b77572f20?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80'
+    id: "3",
+    title: "Aile Hukuku: Boşanma Süreçleri ve Velayet Düzenlemeleri",
+    content: "Aile hukuku, evlilik, boşanma, velayet ve nafaka gibi aile ilişkilerini düzenleyen hukuk dalıdır. Türkiye'de boşanma davaları, anlaşmalı veya çekişmeli olarak iki şekilde yürütülebilir. Anlaşmalı boşanmada, eşlerin mal paylaşımı, velayet ve nafaka konularında anlaşmış olmaları gerekir. Çekişmeli boşanmada ise bu konular mahkeme tarafından karara bağlanır. Velayet düzenlemelerinde çocuğun üstün yararı esas alınır ve genellikle bir ebeveyne verilirken, diğer ebeveyne kişisel ilişki kurma hakkı tanınır. Nafaka ise, ekonomik durumu daha iyi olan eşin diğer eşe veya çocuklara sağladığı maddi destektir. Aile hukuku davalarında uzman bir avukatla çalışmak, sürecin daha sağlıklı ilerlemesini sağlar.",
+    publishDate: "2023-07-10",
+    imageUrl: "/images/placeholder/blog3.jpg"
   },
   {
-    id: '4',
-    title: 'Gayrimenkul Hukuku ve Tapu İşlemleri',
-    content: 'Gayrimenkul alım-satım süreçleri, tapu işlemleri ve gayrimenkul yatırımlarında dikkat edilmesi gereken hukuki konular. Tapu devri nasıl yapılır? Gayrimenkul alırken hangi belgeleri kontrol etmelisiniz? İpotekli bir gayrimenkulün alım-satımında nelere dikkat edilmeli? Kat irtifakı ve kat mülkiyeti arasındaki farklar nelerdir? Bu yazımızda, gayrimenkul işlemlerinde karşılaşabileceğiniz tüm hukuki süreçleri ve dikkat edilmesi gereken noktaları açıklıyoruz.',
-    publishDate: '29 Mayıs 2023',
-    imageUrl: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80'
+    id: "4",
+    title: "Ticaret Hukuku: Şirket Kuruluşu ve Yönetimi",
+    content: "Ticaret hukuku, ticari işletmeler, şirketler ve ticari sözleşmeleri düzenleyen hukuk dalıdır. Türkiye'de şirket kuruluşu, anonim şirket, limited şirket, kollektif şirket gibi farklı türlerde gerçekleştirilebilir. Her şirket türünün kendine özgü kuruluş prosedürleri, sermaye gereksinimleri ve yönetim yapıları bulunmaktadır. Şirket yönetiminde, yönetim kurulu veya müdürler kurulu gibi organların sorumlulukları, karar alma mekanizmaları ve pay sahiplerinin hakları önemli konulardır. Ayrıca, ticari sözleşmelerin hazırlanması, uyuşmazlıkların çözümü ve şirket birleşme-devralma süreçleri de ticaret hukukunun kapsamına girer. Doğru hukuki danışmanlık, şirketlerin yasal yükümlülüklerini yerine getirmelerini ve potansiyel riskleri yönetmelerini sağlar.",
+    publishDate: "2023-08-05",
+    imageUrl: "/images/placeholder/blog4.jpg"
   },
   {
-    id: '5',
-    title: 'Ticaret Hukuku ve Şirket Kuruluşu',
-    content: 'Ticaret hukuku kapsamında şirket kuruluşu, şirket türleri ve ticari işletmelerin hukuki yapıları hakkında bilgiler. Limited şirket ve anonim şirket arasındaki farklar nelerdir? Şirket kuruluşu için hangi belgeler gereklidir? Ortaklık sözleşmesi nasıl hazırlanır? Şirket yönetiminde sorumluluklar nasıl belirlenir? Bu yazımızda, ticari işletme kurmayı düşünenler için tüm hukuki süreçleri ve gerekli bilgileri detaylı bir şekilde ele alıyoruz.',
-    publishDate: '12 Haziran 2023',
-    imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80'
+    id: "5",
+    title: "Ceza Hukuku: Temel İlkeler ve Savunma Hakları",
+    content: "Ceza hukuku, suçları, cezaları ve ceza yargılamasını düzenleyen hukuk dalıdır. Türk Ceza Kanunu ve Ceza Muhakemesi Kanunu, bu alanın temel yasal düzenlemeleridir. Ceza hukukunun temel ilkeleri arasında kanunsuz suç ve ceza olmaz ilkesi, masumiyet karinesi ve şüpheden sanık yararlanır ilkesi bulunmaktadır. Savunma hakları ise, adil yargılanma hakkının önemli bir parçasıdır ve susma hakkı, müdafi yardımından yararlanma hakkı ve delillere erişim hakkı gibi hakları içerir. Ceza davalarında, soruşturma ve kovuşturma aşamalarında izlenecek prosedürler, delillerin toplanması ve değerlendirilmesi, ve itiraz yolları gibi konular büyük önem taşır. Uzman bir ceza avukatıyla çalışmak, savunma haklarının etkin bir şekilde kullanılmasını sağlar.",
+    publishDate: "2023-09-18",
+    imageUrl: "/images/placeholder/blog5.jpg"
   }
 ];
 
 // Tüm blog yazılarını getir
 export const getAllBlogs = async () => {
+  // In development mode, always use mock data
+  if (isDevelopment) {
+    console.log('Development mode: Using mock blog data');
+    return MOCK_BLOGS;
+  }
+  
   try {
-    const response = await axios.get(API_URL);
+    console.log("Fetching from Google Sheets API:", SHEETS_API_URL);
+    const response = await fetch(SHEETS_API_URL);
     
-    if (!response.data) {
-      throw new Error("API çağrısı başarısız.");
+    if (!response.ok) {
+      throw new Error("Google Sheets API çağrısı başarısız.");
     }
     
-    return response.data.data || response.data;
+    const data = await response.json();
+    console.log("Google Sheets API response:", data);
+    const rows = data.values;
+    
+    // İlk satır başlık satırı olduğu için onu atlayıp diğer satırları işliyoruz
+    const blogs = rows.slice(1).map((row, index) => ({
+      id: (index + 1).toString(),
+      title: row[0] || 'Başlık Yok',
+      content: row[1] || 'İçerik Yok',
+      publishDate: row[2] || 'Tarih Yok',
+      imageUrl: row[3] || null
+    }));
+    
+    return blogs;
   } catch (error) {
     console.error('Blog verileri alınırken hata oluştu:', error);
     console.log('Mock veri kullanılıyor...');
@@ -65,13 +91,15 @@ export const getAllBlogs = async () => {
 // ID'ye göre blog yazısı getir
 export const getBlogById = async (id) => {
   try {
-    const response = await axios.get(`${API_URL}/${id}`);
+    // Tüm blogları getir ve ID'ye göre filtrele
+    const allBlogs = await getAllBlogs();
+    const blog = allBlogs.find(blog => blog.id === id);
     
-    if (!response.data) {
-      throw new Error("API çağrısı başarısız.");
+    if (blog) {
+      return [blog];
+    } else {
+      throw new Error("Blog bulunamadı");
     }
-    
-    return response.data.data || response.data;
   } catch (error) {
     console.error('Blog verisi alınırken hata oluştu:', error);
     // Mock veriden ID'ye göre blog yazısını bul
