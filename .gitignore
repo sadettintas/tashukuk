@@ -3,6 +3,6 @@ node_modules/
 .env
 .DS_Store
 build/
-google-credentials.json
 client/build/
 client/node_modules/
+google-credentials.json
