@@ -6,3 +6,4 @@ build/
 client/build/
 client/node_modules/
 google-credentials.json
+google-credentials.json
