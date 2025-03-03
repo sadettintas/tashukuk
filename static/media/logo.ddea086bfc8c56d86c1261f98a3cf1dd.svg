@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4169E1"/>
+      <stop offset="100%" style="stop-color:#1E40AF"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Flower Pattern -->
+  <g transform="translate(200, 180)">
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="5" fill="url(#logoGradient)"/>
+    
+    <!-- Petals -->
+    <g id="petal-group">
+      <path d="M0,-20 C10,-20 20,-35 0,-60 C-20,-35 -10,-20 0,-20" fill="url(#logoGradient)" transform="rotate(0)"/>
+      <path d="M0,-20 C10,-20 20,-35 0,-60 C-20,-35 -10,-20 0,-20" fill="url(#logoGradient)" transform="rotate(72)"/>
+      <path d="M0,-20 C10,-20 20,-35 0,-60 C-20,-35 -10,-20 0,-20" fill="url(#logoGradient)" transform="rotate(144)"/>
+      <path d="M0,-20 C10,-20 20,-35 0,-60 C-20,-35 -10,-20 0,-20" fill="url(#logoGradient)" transform="rotate(216)"/>
+      <path d="M0,-20 C10,-20 20,-35 0,-60 C-20,-35 -10,-20 0,-20" fill="url(#logoGradient)" transform="rotate(288)"/>
+    </g>
+    
+    <!-- Small dots -->
+    <g id="dots">
+      <circle cx="0" cy="-70" r="4" fill="url(#logoGradient)" transform="rotate(0)"/>
+      <circle cx="0" cy="-70" r="4" fill="url(#logoGradient)" transform="rotate(72)"/>
+      <circle cx="0" cy="-70" r="4" fill="url(#logoGradient)" transform="rotate(144)"/>
+      <circle cx="0" cy="-70" r="4" fill="url(#logoGradient)" transform="rotate(216)"/>
+      <circle cx="0" cy="-70" r="4" fill="url(#logoGradient)" transform="rotate(288)"/>
+    </g>
+  </g>
+  
+  <!-- Text TASHUKUK -->
+  <text x="200" y="350" text-anchor="middle" 
+        style="font-family: Arial, sans-serif; font-size: 48px; font-weight: bold; fill: #1E40AF;">
+    TASHUKUK
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="200" y="390" text-anchor="middle" 
+        style="font-family: Arial, sans-serif; font-size: 24px; fill: #4169E1; letter-spacing: 2px;">
+    ADALETIN TEMINATI
+  </text>
+</svg> 
